@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | College Attendance</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+
+<div class="bg"></div>
+
+<div class="login-wrapper">
+  <div class="login-box glass">
+  <h2 class="login-title">Sign In</h2>
+
+  <div class="input-group">
+    <span>📧</span>
+    <input type="email" id="email" placeholder="Email address" autocomplete="off">
+  </div>
+
+  <div class="input-group">
+    <span>🔒</span>
+    <input type="password" id="password" placeholder="Password">
+  </div>
+
+  <button class="login-btn" onclick="login()">Sign In</button>
+
+  <div id="toast" class="toast"></div>
+</div>
+</div>
+
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

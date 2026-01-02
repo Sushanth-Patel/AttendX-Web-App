@@ -1,0 +1,384 @@
+/* ================= GLOBAL ================= */
+* {
+  font-family: 'Poppins', sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ================= BACKGROUND ================= */
+.bg {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(120deg, #3b82f6, #9333ea, #ec4899);
+  background-size: 300% 300%;
+  animation: gradient 8s ease infinite;
+  z-index: -1;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ================= GLASS EFFECT ================= */
+.glass {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  color: white;
+}
+
+/* ================= LOGIN PAGE ================= */
+.login-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  width: 360px;
+  padding: 35px 30px;
+  text-align: center;
+  animation: fadeIn 0.8s ease;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  letter-spacing: 0.5px;
+}
+
+/* Input Fields */
+.input-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.22);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.input-group span {
+  font-size: 16px;
+  margin-right: 10px;
+  opacity: 0.85;
+}
+
+.input-group input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 14px;
+  width: 100%;
+}
+
+.input-group input::placeholder {
+  color: #e5e7eb;
+}
+
+/* Input Focus Glow */
+.input-group:focus-within {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.35);
+}
+
+/* Login Button */
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 30px;
+  border: none;
+  background: white;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.25s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+
+/* Toast Notification */
+.toast {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: none;
+  animation: slideUp 0.4s ease;
+}
+
+.toast.error {
+  background: rgba(239,68,68,0.95);
+}
+
+.toast.success {
+  background: rgba(34,197,94,0.95);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================= ADMIN DASHBOARD ================= */
+.dashboard {
+  width: min(1100px, 95%);
+  margin: 40px auto;
+  padding: 30px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: white;
+  color: #4f46e5;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Action Buttons */
+.action-grid {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.round-btn {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  color: #4f46e5;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.round-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+}
+
+/* Panels */
+.panel {
+  max-width: 420px;
+  margin: 30px auto;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.2);
+}
+
+.panel input {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 6px;
+  border: none;
+}
+
+.panel button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 20px;
+  border: none;
+  background: white;
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+/* ================= TABLE VIEW ================= */
+
+#tableTab {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 15px;
+}
+
+/* Container */
+.table-container {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 15px;
+  color: #111827;
+}
+
+/* Toolbar */
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.table-left {
+  display: flex;
+  gap: 10px;
+}
+
+.table-left input {
+  width: 220px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+
+.table-left select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+
+.table-right {
+  display: flex;
+  gap: 10px;
+}
+
+.table-right button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #4f46e5;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Table Wrapper */
+.table-wrapper {
+  max-height: 420px;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Table */
+.pro-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.pro-table th {
+  background: #4f46e5;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+}
+
+.pro-table td {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+.pro-table tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.pro-table tr:hover {
+  background: #eef2ff;
+}
+
+.empty {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+}
+
+/* ================= PRINT ONLY TABLE ================= */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #tableTab,
+  #tableTab * {
+    visibility: visible;
+  }
+
+  #tableTab {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+  }
+
+  .table-right {
+    display: none;
+  }
+}
+.table-wrapper {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #f4f6f8;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.primary-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
+}

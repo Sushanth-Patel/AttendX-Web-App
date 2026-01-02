@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>View Attendance</title>
+  <link rel="stylesheet" href="faculty.css">
+</head>
+<body>
+
+<h2>View Attendance</h2>
+
+<div style="margin-bottom:15px;">
+  <select id="classSelect">
+    <option value="">Select Class</option>
+  </select>
+
+  <select id="yearSelect">
+    <option value="">Select Year-Sem</option>
+  </select>
+
+  <input type="date" id="date">
+  <button onclick="searchAttendance()">Search</button>
+</div>
+
+<table id="attendanceTable" border="1" cellpadding="12" cellspacing="0"
+       style="display:none; width:100%; font-size:16px;">
+  <thead>
+    <tr>
+      <th>Roll No</th>
+      <th>Name</th>
+      <th>Class</th>
+      <th>Year-Sem</th>
+      <th>Subject</th>
+      <th>Date</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="attendanceTableBody"></tbody>
+</table>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+<script src="js/firebase.js"></script>
+<script src="js/attendance.js"></script>
+
+</body>
+</html>

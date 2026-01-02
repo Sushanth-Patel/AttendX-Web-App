@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+<!-- Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<div class="bg"></div>
+
+<div class="dashboard glass">
+
+<header>
+  <h2>Admin Dashboard</h2>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
+
+<!-- ACTION BUTTONS -->
+<div class="action-grid">
+  <button class="round-btn" onclick="openPanel('facultyPanel')">Add Faculty</button>
+  <button class="round-btn" onclick="openPanel('studentPanel')">Add Student</button>
+  <button class="round-btn" onclick="viewFaculty()">View Faculty</button>
+  <button class="round-btn" onclick="viewStudents()">View Students</button>
+  <button class="round-btn" onclick="viewAttendance()">View Attendance</button>
+</div>
+
+<!-- ADD FACULTY -->
+<div id="facultyPanel" class="panel hidden">
+  <h3>Add Faculty</h3>
+
+  <!-- Manual -->
+  <input id="fid" placeholder="Faculty ID">
+  <input id="fname" placeholder="Name">
+  <input id="fsub" placeholder="Subject">
+  <input id="fdept" placeholder="Department">
+  <input id="femail" placeholder="Email">
+  <button onclick="addFaculty()">Save Faculty</button>
+
+  <hr>
+
+  <!-- Upload -->
+<h4>Upload Faculty (Excel / CSV)</h4>
+<input type="file" id="facultyFile" accept=".xlsx,.csv">
+<button onclick="uploadFaculty()">Upload Faculty</button>
+</div>
+
+<!-- ADD STUDENT -->
+<div id="studentPanel" class="panel hidden">
+  <h3>Add Student</h3>
+
+  <!-- Manual -->
+  <input id="roll" placeholder="Roll No">
+  <input id="sname" placeholder="Name">
+  <input id="classSec" placeholder="Class Section">
+  <input id="yearSem" placeholder="Year-Semester">
+  <input id="sdept" placeholder="Department">
+  <input id="semail" placeholder="Email">
+  <button onclick="addStudent()">Save Student</button>
+
+  <hr>
+
+  <!-- Upload -->
+<h4>Upload Students (Excel / CSV)</h4>
+<input type="file" id="studentFile" accept=".xlsx,.csv">
+<button onclick="uploadStudents()">Upload Students</button>
+</div>
+
+<!-- TABLE VIEW -->
+<div id="tableTab" class="panel hidden">
+
+  <!-- Hidden title required for JS (do not display) -->
+<h3 id="tableTitle" style="display:none;"></h3>
+
+  <div class="table-container">
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+
+      <!-- LEFT : SEARCH + SORT -->
+      <div class="table-left">
+        <input id="searchBox" type="text" placeholder="Search">
+
+        <select id="sortBy" onchange="applySort()">
+          <option value="">Sort By</option>
+        </select>
+      </div>
+
+      <!-- RIGHT : PRINT + CLOSE -->
+      <div class="table-right">
+        <button onclick="exportToExcel()">Export Excel</button>
+        <button onclick="printTable()">Print</button>
+        <button onclick="closeTable()">Close</button>
+      </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrapper" id="printArea">
+      <table id="dataTable" class="pro-table">
+        <!-- headers & rows injected by existing JS -->
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="js/firebase.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

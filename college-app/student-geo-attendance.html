@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Geolocation Attendance</title>
+  <link rel="stylesheet" href="student.css">
+</head>
+<body>
+
+<h2>Geolocation Attendance</h2>
+
+<div style="margin-bottom:15px;">
+  <select id="subject"></select>
+  <button onclick="markAttendance()">Mark Attendance</button>
+</div>
+
+<p id="statusMsg" style="font-weight:bold;"></p>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="js/firebase.js"></script>
+<script src="js/student-geo-attendance.js"></script>
+
+</body>
+</html>
