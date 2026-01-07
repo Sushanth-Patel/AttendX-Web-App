@@ -2,43 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login | College Attendance</title>
+  <title>AttendX | Login</title>
+  <link rel="stylesheet" href="css/login.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+  <div class="login-shell">
 
-  <!-- Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <div class="login-left">
+      <div class="brand">
+        <img src="logo.jpeg" alt="AttendX logo">
+        <span>AttendX</span>
+      </div>
 
-  <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/app.css"></head>
-<body class="login-page">
+      <h1>Login to <span>AttendX</span></h1>
+      <br>
+      <!-- <p class="subtitle">Geolocation-backed attendance for admins, faculty, and students.</p> -->
 
-<div class="bg"></div>
+      <form onsubmit="login(); return false;" class="login-form">
+        <label>Email</label>
+        <div class="input-box">
+          <span class="icon">✉</span>
+          <input id="email" type="email" placeholder="admin@demo.com" required>
+        </div>
 
-<div class="login-wrapper">
-  <div class="login-box glass">
-  <h2 class="login-title">Sign In</h2>
+        <label>Password</label>
+        <div class="input-box">
+          <span class="icon">🔒</span>
+          <input id="password" type="password" placeholder="Password" required>
+        </div>
 
-  <div class="input-group">
-    <span>📧</span>
-    <input type="email" id="email" placeholder="Email address" autocomplete="off">
+        <button type="submit">Login</button>
+        <a href="#" class="forgot" onclick="requestPasswordReset();return false;">Forgot password?</a>
+        <div id="toast" class="toast" style="display:none;"></div>
+      </form>
+    </div>
+
+    <div class="login-right">
+        <div class="hero-card">
+          <img src="login image.jpeg" alt="AttendX illustration">
+        </div>
+    </div>
+
   </div>
 
-  <div class="input-group">
-    <span>🔒</span>
-    <input type="password" id="password" placeholder="Password">
-  </div>
-
-  <button class="login-btn" onclick="login()">Sign In</button>
-
-  <div id="toast" class="toast"></div>
-</div>
-</div>
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
-
-<script src="js/firebase.js"></script>
-<script src="js/auth.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
 </body>
 </html>
+

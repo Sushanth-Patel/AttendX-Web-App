@@ -6,45 +6,50 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-
-<div class="dashboard">
-  <header>
-    <h2>Student Dashboard</h2>
-    <button onclick="logout()">Logout</button>
-  </header>
-
-  <!-- Student Details -->
-  <div class="card">
-    <h3>Student Details</h3>
-    <div id="studentInfo">Loading...</div>
-  </div>
-
-  <!-- Attendance -->
-  <div class="card">
-    <h3>My Attendance</h3>
-
-    <div style="margin-bottom:10px;">
-      <label>Subject:</label>
-      <select id="filterSubject">
-        <option value="">All Subjects</option>
-      </select>
-
-      <label>Date:</label>
-      <input type="date" id="filterDate">
-
-      <button onclick="loadMyAttendance()">View Attendance</button>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="logo.jpeg" alt="AttendX logo">
+      <span class="nav-text">AttendX</span>
     </div>
+    <div class="nav-group">
+      <div class="nav-title">Navigation</div>
+      <a class="nav-link active" href="student.html"><span class="nav-text">Student Profile</span></a>
+      <a class="nav-link" href="student-geo-attendance.html"><span class="nav-text">Mark Attendance</span></a>
+      <a class="nav-link" href="attendance-reports.html"><span class="nav-text">Attendance Reports</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" onclick="logout()">Logout</button>
+    </div>
+  </aside>
 
-    <table border="1" width="100%" cellpadding="10">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Subject</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="attendanceTable"></tbody>
-    </table>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="toggle-btn">≡</button>
+        <div class="page-title">Student Dashboard</div>
+      </div>
+      <div class="user-chip" id="studentChip">
+        <span id="studentEmail">student@example.com</span>
+        <button class="logout-inline" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="panel">
+        <h3>Student Profile</h3>
+        <div class="profile-card">
+          <img id="studentPhoto" class="profile-avatar" src="attend1.jpeg" alt="Student photo">
+          <div class="profile-actions" id="studentPhotoActions">
+            <input type="file" id="studentPhotoInput" accept="image/*">
+            <button class="btn btn-primary" onclick="saveStudentPhoto()">Save Photo</button>
+          </div>
+        </div>
+        <div id="studentInfo" class="stack" style="margin-top:12px;">Loading...</div>
+      </div>
+
+      <!-- Attendance Reports removed from Student Profile as per requirements -->
+    </div>
   </div>
 </div>
 

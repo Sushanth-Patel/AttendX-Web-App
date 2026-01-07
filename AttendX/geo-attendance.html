@@ -3,37 +3,89 @@
 <head>
   <title>Faculty Geolocation Attendance</title>
   <link rel="stylesheet" href="faculty.css">
-<link rel="stylesheet" href="css/app.css"></head>
+  <link rel="stylesheet" href="css/app.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
 <body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="logo.jpeg" alt="AttendX logo">
+      <span class="nav-text">AttendX</span>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Navigation</div>
+      <a class="nav-link" href="faculty.html"><span class="nav-text">Dashboard</span></a>
+      <a class="nav-link" href="manual-attendance.html"><span class="nav-text">Manual Attendance</span></a>
+      <a class="nav-link active" href="geo-attendance.html"><span class="nav-text">Geolocation Session</span></a>
+      <a class="nav-link" href="attendance.html"><span class="nav-text">View Attendance</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" onclick="logout()">Logout</button>
+    </div>
+  </aside>
 
-<h2>Geolocation Attendance</h2>
-<div class="controls">
-  <select id="subject">
-  <option value="" disabled selected>Select Subject</option>
-</select>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="toggle-btn">≡</button>
+        <div class="page-title">Initiate Attendance Session</div>
+      </div>
+      <div class="user-chip" id="facultyChip">
+        <span id="facultyChipName">Faculty</span>
+        <button class="logout-inline" onclick="logout()">Logout</button>
+      </div>
+    </header>
 
-<select id="classSection">
-  <option value="" disabled selected>Select Class Section</option>
-</select>
+    <div class="content">
+      <div class="card">
+        <div class="flex-between">
+          <div>
+            <div class="section-title">Geolocation Attendance</div>
+            <div class="muted">Select semester, subject and start the live session.</div>
+          </div>
+          <div class="pill">
+            <span>Location mode: Geofenced</span>
+          </div>
+        </div>
 
-<select id="yearSem">
-  <option value="" disabled selected>Select Year / Semester</option>
-</select>
+        <div class="controls">
+          <select id="subject">
+            <option value="" disabled selected>Select Subject</option>
+          </select>
+          <select id="classSection">
+            <option value="" disabled selected>Select Class Section</option>
+          </select>
+          <select id="yearSem">
+            <option value="" disabled selected>Select Year / Semester</option>
+          </select>
+          <input type="number" id="radius" placeholder="Radius (meters)" />
+          <input type="number" id="duration" placeholder="Duration (minutes)" />
+          <button class="btn btn-primary" onclick="startGeoAttendance()">Start Attendance</button>
+        </div>
 
-<input type="number" id="duration" placeholder="Duration (minutes)" />
-<button onclick="startAttendance()">Start Attendance</button>
+        <div id="map" class="map-box" style="height: 400px; width: 100%; border-radius: 12px; border: 1px solid var(--border);"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Live Student List</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="studentTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<table border="1" width="100%" style="margin-top:20px">
-  <thead>
-    <tr>
-      <th>Roll No</th>
-      <th>Name</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody id="studentTable"></tbody>
-</table>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -41,7 +93,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/faculty-geo-attendance.js"></script>
 
 </body>

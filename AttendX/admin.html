@@ -11,103 +11,203 @@
 <link rel="stylesheet" href="css/app.css"></head>
 
 <body>
-<div class="bg"></div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="logo.jpeg" alt="AttendX logo">
+      <span class="nav-text">AttendX</span>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Navigation</div>
+      <a class="nav-link active" href="#profile" onclick="openPanel('profilePanel')"><span class="nav-text">Admin Profile</span></a>
+      <a class="nav-link" href="#faculty" onclick="openPanel('facultyPanel')"><span class="nav-text">Add Faculty</span></a>
+      <a class="nav-link" href="#students" onclick="openPanel('studentPanel')"><span class="nav-text">Add Student</span></a>
+      <a class="nav-link" href="#facultyList" onclick="viewFaculty()"><span class="nav-text">View Faculty</span></a>
+      <a class="nav-link" href="#studentList" onclick="viewStudents()"><span class="nav-text">View Students</span></a>
+      <a class="nav-link" href="#records" onclick="viewAttendance()"><span class="nav-text">View Attendance</span></a>
+      <a class="nav-link" href="#password" onclick="loadPasswordRequests()"><span class="nav-text">Password Change Requests</span></a>
+      <a class="nav-link" href="#audit" onclick="loadAuditLogs()"><span class="nav-text">Audit Logs</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" onclick="logout()">Logout</button>
+    </div>
+  </aside>
 
-<div class="dashboard glass">
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="toggle-btn">≡</button>
+        <div class="page-title">Admin Dashboard</div>
+      </div>
+      <div class="user-chip">
+        <span id="userChipName">Admin</span>
+        <button class="logout-inline" onclick="logout()">Logout</button>
+      </div>
+    </header>
 
-<header>
-  <h2>Admin Dashboard</h2>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-</header>
-
-<!-- ACTION BUTTONS -->
-<div class="action-grid">
-  <button class="round-btn" onclick="openPanel('facultyPanel')">Add Faculty</button>
-  <button class="round-btn" onclick="openPanel('studentPanel')">Add Student</button>
-  <button class="round-btn" onclick="viewFaculty()">View Faculty</button>
-  <button class="round-btn" onclick="viewStudents()">View Students</button>
-  <button class="round-btn" onclick="viewAttendance()">View Attendance</button>
-</div>
-
-<!-- ADD FACULTY -->
-<div id="facultyPanel" class="panel hidden">
-  <h3>Add Faculty</h3>
-
-  <!-- Manual -->
-  <input id="fid" placeholder="Faculty ID">
-  <input id="fname" placeholder="Name">
-  <input id="fsub" placeholder="Subject">
-  <input id="fdept" placeholder="Department">
-  <input id="femail" placeholder="Email">
-  <button onclick="addFaculty()">Save Faculty</button>
-
-  <hr>
-
-  <!-- Upload -->
-<h4>Upload Faculty (Excel / CSV)</h4>
-<input type="file" id="facultyFile" accept=".xlsx,.csv">
-<button onclick="uploadFaculty()">Upload Faculty</button>
-</div>
-
-<!-- ADD STUDENT -->
-<div id="studentPanel" class="panel hidden">
-  <h3>Add Student</h3>
-
-  <!-- Manual -->
-  <input id="roll" placeholder="Roll No">
-  <input id="sname" placeholder="Name">
-  <input id="classSec" placeholder="Class Section">
-  <input id="yearSem" placeholder="Year-Semester">
-  <input id="sdept" placeholder="Department">
-  <input id="semail" placeholder="Email">
-  <button onclick="addStudent()">Save Student</button>
-
-  <hr>
-
-  <!-- Upload -->
-<h4>Upload Students (Excel / CSV)</h4>
-<input type="file" id="studentFile" accept=".xlsx,.csv">
-<button onclick="uploadStudents()">Upload Students</button>
-</div>
-
-<!-- TABLE VIEW -->
-<div id="tableTab" class="panel hidden">
-
-  <!-- Hidden title required for JS (do not display) -->
-<h3 id="tableTitle" style="display:none;"></h3>
-
-  <div class="table-container">
-
-    <!-- TOOLBAR -->
-    <div class="table-toolbar">
-
-      <!-- LEFT : SEARCH + SORT -->
-      <div class="table-left">
-        <input id="searchBox" type="text" placeholder="Search">
-
-        <select id="sortBy" onchange="applySort()">
-          <option value="">Sort By</option>
-        </select>
+    <div class="content">
+      <div id="profilePanel" class="panel">
+        <h3 id="profile">Admin Profile</h3>
+        <div class="profile-card">
+          <img id="adminPhoto" class="profile-avatar" src="attend1.jpeg" alt="Admin photo">
+          <div class="profile-actions" id="adminPhotoActions">
+            <input type="file" id="adminPhotoInput" accept="image/*">
+            <button class="btn btn-primary" onclick="saveProfilePicture('adminPhotoInput')">Save Photo</button>
+          </div>
+        </div>
+        <div id="adminDetails" class="stack" style="margin-top:12px;">Loading...</div>
       </div>
 
-      <!-- RIGHT : PRINT + CLOSE -->
-      <div class="table-right">
-        <button onclick="exportToExcel()">Export Excel</button>
-        <button onclick="printTable()">Print</button>
-        <button onclick="closeTable()">Close</button>
+      <!-- Stat cards removed from admin dashboard as per requirements -->
+
+      <div id="facultyPanel" class="panel hidden">
+        <h3 id="faculty">Add Faculty</h3>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="section-title">Manual Entry</div>
+          <div class="input-row">
+            <div>
+              <label>Faculty ID</label>
+              <input id="fid" placeholder="e.g., FAC-101">
+            </div>
+            <div>
+              <label>Name</label>
+              <input id="fname" placeholder="Full name">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Subjects (comma separated)</label>
+              <input id="fsub" placeholder="Maths, Web Development">
+            </div>
+            <div>
+              <label>Department</label>
+              <input id="fdept" placeholder="Department">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Email</label>
+              <input id="femail" type="email" placeholder="faculty@example.com">
+            </div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="addFaculty()">Save Faculty</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Upload Faculty (Excel / CSV)</div>
+          <div class="page-actions">
+            <input type="file" id="facultyFile" accept=".xlsx,.csv">
+            <button class="btn" onclick="uploadFaculty()">Upload</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="studentPanel" class="panel hidden">
+        <h3 id="students">Add Student</h3>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="section-title">Manual Entry</div>
+          <div class="input-row">
+            <div>
+              <label>Roll No</label>
+              <input id="roll" placeholder="e.g., 21IT101">
+            </div>
+            <div>
+              <label>Name</label>
+              <input id="sname" placeholder="Student name">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Class Section</label>
+              <input id="classSec" placeholder="FT-101">
+            </div>
+            <div>
+              <label>Year - Semester</label>
+              <input id="yearSem" placeholder="III / V Sem">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Department</label>
+              <input id="sdept" placeholder="Department">
+            </div>
+            <div>
+              <label>Email</label>
+              <input id="semail" type="email" placeholder="student@example.com">
+            </div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="addStudent()">Save Student</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Upload Students (Excel / CSV)</div>
+          <div class="page-actions">
+            <input type="file" id="studentFile" accept=".xlsx,.csv">
+            <button class="btn" onclick="uploadStudents()">Upload</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tableTab" class="panel hidden">
+        <h3 id="tableTitle" style="display:none;"></h3>
+        <div class="table-container">
+          <div class="table-toolbar">
+            <div class="table-left">
+              <input id="searchBox" type="text" placeholder="Search">
+            </div>
+            <div class="table-right">
+              <button class="btn" onclick="exportToExcel()">Export</button>
+              <button class="btn" onclick="printTable()">Print</button>
+              <button class="btn btn-primary" onclick="closeTable()">Close</button>
+            </div>
+          </div>
+
+          <div class="table-wrapper" id="printArea">
+            <table id="dataTable" class="pro-table">
+              <!-- headers & rows injected by existing JS -->
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="passwordPanel" class="panel hidden">
+        <h3 id="password">Password Change Requests</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="passwordRequestsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="auditPanel" class="panel hidden">
+        <h3 id="audit">Audit Logs</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Action Type</th>
+                <th>Entity Type</th>
+                <th>Entity ID</th>
+                <th>Performed By</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsBody"></tbody>
+          </table>
+        </div>
       </div>
 
     </div>
-
-    <!-- TABLE -->
-    <div class="table-wrapper" id="printArea">
-      <table id="dataTable" class="pro-table">
-        <!-- headers & rows injected by existing JS -->
-      </table>
-    </div>
-
   </div>
-
 </div>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>

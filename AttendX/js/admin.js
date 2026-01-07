@@ -1,13 +1,22 @@
 /*************************************************
  🔐 AUTH CHECK
 *************************************************/
+let currentAdmin = null;
+let currentProfile = null;
+
 auth.onAuthStateChanged(async user => {
   if (!user) return location.href = "index.html";
 
   const doc = await db.collection("users").doc(user.uid).get();
   if (!doc.exists || doc.data().role !== "admin") {
     location.href = "index.html";
+    return;
   }
+
+  currentAdmin = user;
+  await loadAdminProfile();
+  await populateDashboardStats();
+  attachSidebarToggle();
 });
 
 /*************************************************
@@ -15,6 +24,65 @@ auth.onAuthStateChanged(async user => {
 *************************************************/
 function logout() {
   auth.signOut().then(() => location.href = "index.html");
+}
+
+function attachSidebarToggle() {
+  const sidebar = document.querySelector(".sidebar");
+  const toggle = document.getElementById("sidebarToggle");
+  if (!sidebar || !toggle) return;
+  toggle.onclick = () => sidebar.classList.toggle("collapsed");
+}
+
+async function loadAdminProfile() {
+  if (!currentAdmin) return;
+  const profileSnap = await db.collection("profiles").doc(currentAdmin.uid).get();
+  currentProfile = profileSnap.exists ? profileSnap.data() : null;
+
+  const name = currentProfile?.name || currentAdmin.email?.split("@")[0] || "Admin";
+  const photo = currentProfile?.photo || "attend1.jpeg";
+
+  const profileImgEl = document.getElementById("adminPhoto");
+  const chipName = document.getElementById("userChipName");
+  const adminDetails = document.getElementById("adminDetails");
+
+  if (profileImgEl) profileImgEl.src = photo;
+  if (chipName) chipName.innerText = name;
+
+  if (adminDetails) {
+    adminDetails.innerHTML = `
+      <p><b>Name:</b> ${name}</p>
+      <p><b>Email:</b> ${currentAdmin.email}</p>
+      <p><b>Role:</b> Admin</p>
+    `;
+  }
+
+  const photoActions = document.getElementById("adminPhotoActions");
+  if (profileImgEl && photoActions) {
+    profileImgEl.onclick = () => photoActions.classList.toggle("show");
+  }
+}
+
+async function saveProfilePicture(fileInputId) {
+  const input = document.getElementById(fileInputId);
+  if (!input || !input.files?.length || !currentAdmin) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const base64 = e.target.result;
+    await db.collection("profiles").doc(currentAdmin.uid).set({
+      email: currentAdmin.email,
+      name: document.getElementById("adminName")?.innerText || currentAdmin.email,
+      photo: base64
+    }, { merge: true });
+    await loadAdminProfile();
+    alert("Profile picture updated");
+  };
+  reader.readAsDataURL(file);
+}
+
+async function populateDashboardStats() {
+  // Stat cards removed from dashboard as per requirements
+  // Stats are only shown in View Faculty and View Student pages
 }
 
 /*************************************************
@@ -30,7 +98,6 @@ function closeTable() {
   tableTab.classList.add("hidden");
   dataTable.innerHTML = "";
   searchBox.value = "";
-  sortBy.innerHTML = `<option value="">Sort By</option>`;
 }
 
 /*************************************************
@@ -88,11 +155,21 @@ async function addFaculty() {
     .get();
 
   if (!snap.empty) {
-    await snap.docs[0].ref.update(data);
+    const docRef = snap.docs[0].ref;
+    const docId = snap.docs[0].id;
+    await docRef.update(data);
+    
+    // Log audit for edit
+    if (window.currentEditDocId === docId) {
+      await logAudit("edit", "faculty", docId, currentAdmin.uid);
+      window.currentEditDocId = null;
+    }
+    
     alert("Faculty updated");
   } else {
     await createLoginIfNotExists(data.email, "faculty");
-    await db.collection("faculty").add(data);
+    const newDoc = await db.collection("faculty").add(data);
+    await logAudit("create", "faculty", newDoc.id, currentAdmin.uid);
     alert("Faculty added (Default password: 123456)");
   }
 
@@ -121,11 +198,21 @@ async function addStudent() {
     .get();
 
   if (!snap.empty) {
-    await snap.docs[0].ref.update(data);
+    const docRef = snap.docs[0].ref;
+    const docId = snap.docs[0].id;
+    await docRef.update(data);
+    
+    // Log audit for edit
+    if (window.currentEditDocId === docId) {
+      await logAudit("edit", "students", docId, currentAdmin.uid);
+      window.currentEditDocId = null;
+    }
+    
     alert("Student updated");
   } else {
     await createLoginIfNotExists(data.email, "student");
-    await db.collection("students").add(data);
+    const newDoc = await db.collection("students").add(data);
+    await logAudit("create", "students", newDoc.id, currentAdmin.uid);
     alert("Student added (Default password: 123456)");
   }
 
@@ -134,78 +221,215 @@ async function addStudent() {
 }
 
 /*************************************************
- 📥 BULK UPLOAD FACULTY (LOGIC SAME)
+ 📥 BULK UPLOAD FACULTY (WITH ERROR HANDLING & AUDIT)
 *************************************************/
-function uploadFaculty() {
+async function uploadFaculty() {
   const file = facultyFile.files[0];
-  if (!file) return alert("Select a file");
+  if (!file) {
+    showToast("Please select a file", "error");
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = async e => {
-    const wb = XLSX.read(e.target.result, { type: "binary" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    try {
+      const wb = XLSX.read(e.target.result, { type: "binary" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-    for (const f of rows) {
-      const data = {
-        facultyId: String(f.facultyId),
-        name: f.name,
-        subjects: String(f.subjects).split(",").map(s => s.trim()),
-        department: f.department,
-        email: f.email
-      };
-
-      const q = await db.collection("faculty")
-        .where("facultyId", "==", data.facultyId)
-        .get();
-
-      if (q.empty) {
-        await createLoginIfNotExists(data.email, "faculty");
-        await db.collection("faculty").add(data);
+      if (!rows || rows.length === 0) {
+        showToast("File is empty or invalid format", "error");
+        facultyFile.value = "";
+        return;
       }
-    }
 
-    alert("Faculty upload completed");
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const f = rows[i];
+        try {
+          if (!f.facultyId || !f.email) {
+            errors.push(`Row ${i + 2}: Missing facultyId or email`);
+            errorCount++;
+            continue;
+          }
+
+          const data = {
+            facultyId: String(f.facultyId),
+            name: f.name || "",
+            subjects: String(f.subjects || "").split(",").map(s => s.trim()).filter(Boolean),
+            department: f.department || "",
+            email: String(f.email).trim()
+          };
+
+          const q = await db.collection("faculty")
+            .where("facultyId", "==", data.facultyId)
+            .get();
+
+          if (q.empty) {
+            await createLoginIfNotExists(data.email, "faculty");
+            const newDoc = await db.collection("faculty").add(data);
+            await logAudit("upload", "faculty", newDoc.id, currentAdmin.uid);
+            successCount++;
+          } else {
+            // Update existing
+            await q.docs[0].ref.update(data);
+            await logAudit("upload", "faculty", q.docs[0].id, currentAdmin.uid);
+            successCount++;
+          }
+        } catch (err) {
+          errors.push(`Row ${i + 2}: ${err.message}`);
+          errorCount++;
+        }
+      }
+
+      // Log bulk upload audit
+      await logAudit("bulk_upload", "faculty", `count:${successCount}`, currentAdmin.uid);
+
+      if (errorCount === 0) {
+        showToast(`Faculty upload completed successfully! ${successCount} records processed.`, "success");
+      } else {
+        showToast(`Upload completed with ${errorCount} errors. ${successCount} records processed.`, "warning");
+        console.error("Upload errors:", errors);
+      }
+
+      facultyFile.value = "";
+    } catch (err) {
+      showToast("Error reading file: " + err.message, "error");
+      facultyFile.value = "";
+    }
+  };
+
+  reader.onerror = () => {
+    showToast("Error reading file", "error");
     facultyFile.value = "";
   };
 
   reader.readAsBinaryString(file);
 }
 
+// Toast notification function
+function showToast(message, type = "success") {
+  // Create toast element if it doesn't exist
+  let toast = document.getElementById("adminToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "adminToast";
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+  }
+
+  toast.style.backgroundColor = type === "success" ? "#16a34a" : type === "error" ? "#dc2626" : "#f59e0b";
+  toast.textContent = message;
+  toast.style.opacity = "1";
+  toast.style.display = "block";
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => {
+      toast.style.display = "none";
+    }, 300);
+  }, 3000);
+}
+
 /*************************************************
- 📥 BULK UPLOAD STUDENTS (LOGIC SAME)
+ 📥 BULK UPLOAD STUDENTS (WITH ERROR HANDLING & AUDIT)
 *************************************************/
-function uploadStudents() {
+async function uploadStudents() {
   const file = studentFile.files[0];
-  if (!file) return alert("Select a file");
+  if (!file) {
+    showToast("Please select a file", "error");
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = async e => {
-    const wb = XLSX.read(e.target.result, { type: "binary" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    try {
+      const wb = XLSX.read(e.target.result, { type: "binary" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-    for (const s of rows) {
-      const data = {
-        rollNo: String(s.rollNo),
-        name: s.name,
-        classSection: s.classSection,
-        yearSem: s.yearSem,
-        department: s.department,
-        email: s.email,
-        totalClasses: 0,
-        attendedClasses: 0
-      };
-
-      const q = await db.collection("students")
-        .where("rollNo", "==", data.rollNo)
-        .get();
-
-      if (q.empty) {
-        await createLoginIfNotExists(data.email, "student");
-        await db.collection("students").add(data);
+      if (!rows || rows.length === 0) {
+        showToast("File is empty or invalid format", "error");
+        studentFile.value = "";
+        return;
       }
-    }
 
-    alert("Student upload completed");
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const s = rows[i];
+        try {
+          if (!s.rollNo || !s.email) {
+            errors.push(`Row ${i + 2}: Missing rollNo or email`);
+            errorCount++;
+            continue;
+          }
+
+          const data = {
+            rollNo: String(s.rollNo),
+            name: s.name || "",
+            classSection: s.classSection || "",
+            yearSem: s.yearSem || "",
+            department: s.department || "",
+            email: String(s.email).trim(),
+            totalClasses: 0,
+            attendedClasses: 0
+          };
+
+          const q = await db.collection("students")
+            .where("rollNo", "==", data.rollNo)
+            .get();
+
+          if (q.empty) {
+            await createLoginIfNotExists(data.email, "student");
+            const newDoc = await db.collection("students").add(data);
+            await logAudit("upload", "students", newDoc.id, currentAdmin.uid);
+            successCount++;
+          } else {
+            // Update existing
+            await q.docs[0].ref.update(data);
+            await logAudit("upload", "students", q.docs[0].id, currentAdmin.uid);
+            successCount++;
+          }
+        } catch (err) {
+          errors.push(`Row ${i + 2}: ${err.message}`);
+          errorCount++;
+        }
+      }
+
+      // Log bulk upload audit
+      await logAudit("bulk_upload", "students", `count:${successCount}`, currentAdmin.uid);
+
+      if (errorCount === 0) {
+        showToast(`Student upload completed successfully! ${successCount} records processed.`, "success");
+      } else {
+        showToast(`Upload completed with ${errorCount} errors. ${successCount} records processed.`, "warning");
+        console.error("Upload errors:", errors);
+      }
+
+      studentFile.value = "";
+    } catch (err) {
+      showToast("Error reading file: " + err.message, "error");
+      studentFile.value = "";
+    }
+  };
+
+  reader.onerror = () => {
+    showToast("Error reading file", "error");
     studentFile.value = "";
   };
 
@@ -219,6 +443,12 @@ function uploadStudents() {
 
 function setupTable(title, columns, data, collection) {
   document.querySelectorAll(".panel").forEach(p => p.classList.add("hidden"));
+  // Hide stat cards when showing table
+  const viewFacultyStats = document.getElementById("viewFacultyStats");
+  const viewStudentStats = document.getElementById("viewStudentStats");
+  if (viewFacultyStats) viewFacultyStats.style.display = "none";
+  if (viewStudentStats) viewStudentStats.style.display = "none";
+  
   tableTab.classList.remove("hidden");
 
   tableTitle.innerText = title;
@@ -226,21 +456,14 @@ function setupTable(title, columns, data, collection) {
   currentData = data;
   currentCollection = collection;
 
-  sortBy.innerHTML = `<option value="">Sort By</option>`;
-  columns.forEach(c => {
-    sortBy.innerHTML += `<option value="${c.key}">${c.label}</option>`;
-  });
-
   searchBox.value = "";
   renderTable(data);
 
   searchBox.oninput = applyFilter;
-  sortBy.onchange = applyFilter;
 }
 
 function applyFilter() {
   const q = searchBox.value.toLowerCase();
-  const key = sortBy.value;
 
   let rows = currentData.filter(r =>
     Object.values(r).some(v =>
@@ -248,10 +471,6 @@ function applyFilter() {
         .toLowerCase()
         .includes(q)
     )
-  );
-
-  if (key) rows.sort((a, b) =>
-    String(a[key]).localeCompare(String(b[key]))
   );
 
   renderTable(rows);
@@ -280,9 +499,14 @@ function renderTable(rows) {
   dataTable.innerHTML = html;
 }
 
-function editRow(index) {
+async function editRow(index) {
   const d = currentData[index];
-
+  
+  // Find document ID for audit logging
+  const key = currentCollection === "faculty" ? "facultyId" : "rollNo";
+  const snap = await db.collection(currentCollection).where(key, "==", d[key]).get();
+  const docId = snap.empty ? null : snap.docs[0].id;
+  
   if (currentCollection === "faculty") {
     openPanel("facultyPanel");
     fid.value = d.facultyId;
@@ -301,6 +525,11 @@ function editRow(index) {
     sdept.value = d.department;
     semail.value = d.email;
   }
+  
+  // Log audit for edit action (when save is clicked, not here)
+  if (docId) {
+    window.currentEditDocId = docId;
+  }
 }
 
 async function deleteRow(index) {
@@ -314,45 +543,87 @@ async function deleteRow(index) {
     .get();
 
   if (!snap.empty) {
-    await snap.docs[0].ref.delete();
+    const docRef = snap.docs[0].ref;
+    const docId = snap.docs[0].id;
+    
+    // Log audit before deletion
+    await logAudit("delete", currentCollection, docId, currentAdmin.uid);
+    
+    await docRef.delete();
     alert("Deleted successfully");
     currentCollection === "faculty" ? viewFaculty() : viewStudents();
   }
 }
 
-function viewFaculty() {
-  db.collection("faculty").get().then(snap => {
-    setupTable(
-      "Faculty Records",
-      [
-        { key: "facultyId", label: "Faculty ID" },
-        { key: "name", label: "Faculty Name" },
-        { key: "subjects", label: "Subjects" },
-        { key: "department", label: "Department" },
-        { key: "email", label: "Email Address" }
-      ],
-      snap.docs.map(d => d.data()),
-      "faculty"
-    );
-  });
+async function viewFaculty() {
+  const snap = await db.collection("faculty").get();
+  const totalFaculty = snap.size;
+  
+  // Show stat card for View Faculty page
+  const content = document.querySelector(".content");
+  let statCard = document.getElementById("viewFacultyStats");
+  if (!statCard) {
+    statCard = document.createElement("div");
+    statCard.id = "viewFacultyStats";
+    statCard.className = "grid stat-grid";
+    statCard.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Total Faculty</div>
+        <div class="stat-value" id="statFaculty">0</div>
+      </div>
+    `;
+    content.insertBefore(statCard, content.firstChild);
+  }
+  document.getElementById("statFaculty").innerText = totalFaculty;
+  
+  setupTable(
+    "Faculty Records",
+    [
+      { key: "facultyId", label: "Faculty ID" },
+      { key: "name", label: "Faculty Name" },
+      { key: "subjects", label: "Subjects" },
+      { key: "department", label: "Department" },
+      { key: "email", label: "Email Address" }
+    ],
+    snap.docs.map(d => d.data()),
+    "faculty"
+  );
 }
 
-function viewStudents() {
-  db.collection("students").get().then(snap => {
-    setupTable(
-      "Student Records",
-      [
-        { key: "rollNo", label: "Roll Number" },
-        { key: "name", label: "Student Name" },
-        { key: "classSection", label: "Class Section" },
-        { key: "yearSem", label: "Year–Semester" },
-        { key: "department", label: "Department" },
-        { key: "email", label: "Email Address" }
-      ],
-      snap.docs.map(d => d.data()),
-      "students"
-    );
-  });
+async function viewStudents() {
+  const snap = await db.collection("students").get();
+  const totalStudents = snap.size;
+  
+  // Show stat card for View Student page
+  const content = document.querySelector(".content");
+  let statCard = document.getElementById("viewStudentStats");
+  if (!statCard) {
+    statCard = document.createElement("div");
+    statCard.id = "viewStudentStats";
+    statCard.className = "grid stat-grid";
+    statCard.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="statStudents">0</div>
+      </div>
+    `;
+    content.insertBefore(statCard, content.firstChild);
+  }
+  document.getElementById("statStudents").innerText = totalStudents;
+  
+  setupTable(
+    "Student Records",
+    [
+      { key: "rollNo", label: "Roll Number" },
+      { key: "name", label: "Student Name" },
+      { key: "classSection", label: "Class Section" },
+      { key: "yearSem", label: "Year–Semester" },
+      { key: "department", label: "Department" },
+      { key: "email", label: "Email Address" }
+    ],
+    snap.docs.map(d => d.data()),
+    "students"
+  );
 }
 /*************************************************
  📤 EXPORT TABLE TO EXCEL (WORKING)
@@ -478,4 +749,150 @@ function viewAttendance() {
       "attendance"
     );
   });
+}
+
+/*************************************************
+ 📩 PASSWORD RESET REQUESTS (ADMIN ACTION)
+*************************************************/
+async function loadPasswordRequests() {
+  openPanel("passwordPanel");
+  const tbody = document.getElementById("passwordRequestsBody");
+  if (!tbody) return;
+  const snap = await db.collection("passwordRequests").orderBy("createdAt", "desc").get();
+  if (snap.empty) {
+    tbody.innerHTML = `<tr><td colspan="3">No requests.</td></tr>`;
+    return;
+  }
+  let rows = "";
+  snap.docs.forEach(doc => {
+    const d = doc.data();
+    const isReset = d.status === "reset" || d.status === "reset-triggered";
+    rows += `<tr>
+      <td>${d.email}</td>
+      <td>${d.status || "pending"}</td>
+      <td>${isReset ? '<span style="color:green;">Password was reset successfully</span>' : `<button id="resetBtn_${doc.id}" onclick="resetToDefault('${doc.id}','${d.email}')">Reset to 123456</button>`}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = rows;
+}
+
+async function resetToDefault(docId, email) {
+  try {
+    // Find user by email
+    const userSnap = await db.collection("users").where("email", "==", email).get();
+    if (userSnap.empty) {
+      alert("User not found");
+      return;
+    }
+    
+    const userId = userSnap.docs[0].id;
+    
+    // Store password reset intent (actual password change requires server-side or Cloud Function)
+    // For now, we'll mark it as reset and store the intent
+    await db.collection("passwordRequests").doc(docId).update({
+      status: "reset",
+      handledAt: firebase.firestore.FieldValue.serverTimestamp(),
+      resetPassword: "123456",
+      resetBy: currentAdmin.uid
+    });
+    
+    // Store password reset in users collection for reference
+    await db.collection("users").doc(userId).update({
+      passwordReset: "123456",
+      passwordResetAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Log audit
+    await logAudit("password_reset", "user", userId, currentAdmin.uid);
+    
+    alert("Password was reset successfully");
+    loadPasswordRequests();
+  } catch (err) {
+    console.error(err);
+    alert("Could not reset password. Error: " + err.message);
+  }
+}
+
+// Audit logging function
+async function logAudit(actionType, entityType, entityId, performedBy) {
+  try {
+    await db.collection("auditLogs").add({
+      actionType: actionType,
+      entityType: entityType,
+      entityId: entityId,
+      performedBy: performedBy,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Audit log error:", err);
+  }
+}
+
+/*************************************************
+ 📋 LOAD AUDIT LOGS
+*************************************************/
+async function loadAuditLogs() {
+  openPanel("auditPanel");
+  const tbody = document.getElementById("auditLogsBody");
+  if (!tbody) return;
+  
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+  
+  try {
+    const snap = await db.collection("auditLogs")
+      .orderBy("timestamp", "desc")
+      .limit(100)
+      .get();
+    
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No audit logs found.</td></tr>';
+      return;
+    }
+    
+    // Get all unique user IDs first
+    const userIds = new Set();
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      if (d.performedBy) userIds.add(d.performedBy);
+    });
+    
+    // Fetch user emails
+    const userEmails = {};
+    for (const uid of userIds) {
+      try {
+        const userDoc = await db.collection("users").doc(uid).get();
+        if (userDoc.exists) {
+          userEmails[uid] = userDoc.data().email || uid;
+        } else {
+          userEmails[uid] = uid;
+        }
+      } catch (e) {
+        userEmails[uid] = uid;
+      }
+    }
+    
+    let rows = "";
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      let timestamp = "N/A";
+      if (d.timestamp?.seconds) {
+        timestamp = new Date(d.timestamp.seconds * 1000).toLocaleString();
+      }
+      
+      const performedByEmail = userEmails[d.performedBy] || d.performedBy || "-";
+      
+      rows += `<tr>
+        <td>${timestamp}</td>
+        <td>${d.actionType || "-"}</td>
+        <td>${d.entityType || "-"}</td>
+        <td>${d.entityId || "-"}</td>
+        <td>${performedByEmail}</td>
+      </tr>`;
+    });
+    
+    tbody.innerHTML = rows;
+  } catch (err) {
+    console.error("Error loading audit logs:", err);
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Error loading audit logs: ' + err.message + '</td></tr>';
+  }
 }

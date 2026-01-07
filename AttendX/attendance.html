@@ -5,41 +5,76 @@
   <link rel="stylesheet" href="faculty.css">
 <link rel="stylesheet" href="css/app.css"></head>
 <body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="logo.jpeg" alt="AttendX logo">
+      <span class="nav-text">AttendX</span>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Navigation</div>
+      <a class="nav-link" href="faculty.html"><span class="nav-text">Dashboard</span></a>
+      <a class="nav-link" href="manual-attendance.html"><span class="nav-text">Manual Attendance</span></a>
+      <a class="nav-link" href="geo-attendance.html"><span class="nav-text">Geolocation Session</span></a>
+      <a class="nav-link active" href="attendance.html"><span class="nav-text">View Attendance</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" onclick="logout()">Logout</button>
+    </div>
+  </aside>
 
-<h2>View Attendance</h2>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="toggle-btn">≡</button>
+        <div class="page-title">Attendance Reports</div>
+      </div>
+      <div class="user-chip">
+        <span id="facultyChipName">Faculty</span>
+        <button class="logout-inline" onclick="logout()">Logout</button>
+      </div>
+    </header>
 
-<div style="margin-bottom:15px;">
-  <select id="subjectSelect">
-    <option value="">Select Subject</option>
-  </select>
+    <div class="content">
+      <div class="card">
+        <div class="section-title">Filters</div>
+        <div class="controls">
+          <select id="subjectSelect">
+            <option value="">Select Subject</option>
+          </select>
 
-  <select id="classSelect">
-    <option value="">Select Class</option>
-  </select>
+          <select id="classSelect">
+            <option value="">Select Class</option>
+          </select>
 
-  <select id="yearSelect">
-    <option value="">Select Year-Sem</option>
-  </select>
+          <select id="yearSelect">
+            <option value="">Select Year-Sem</option>
+          </select>
 
-  <input type="date" id="date">
-  <button onclick="searchAttendance()">Search</button>
+          <input type="date" id="date">
+          <button class="btn btn-primary" onclick="searchAttendance()">Search</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Attendance Table</div>
+        <div class="table-wrapper">
+          <table id="attendanceTable" style="display:none;">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Marked Time</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<table id="attendanceTable" border="1" cellpadding="12" cellspacing="0"
-       style="display:none; width:100%; font-size:16px;">
-  <thead>
-    <tr>
-      <th>Roll No</th>
-      <th>Name</th>
-      <th>Class</th>
-      <th>Year-Sem</th>
-      <th>Subject</th>
-      <th>Date</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody id="attendanceTableBody"></tbody>
-</table>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -47,6 +82,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/attendance.js"></script>
 
 </body>

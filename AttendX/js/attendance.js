@@ -5,6 +5,7 @@ firebase.auth().onAuthStateChanged(user => {
   }
 
   const db = firebase.firestore();
+  attachSidebarToggle();
 
   const subjectSelect = document.getElementById("subjectSelect");
   const classSelect = document.getElementById("classSelect");
@@ -20,7 +21,10 @@ firebase.auth().onAuthStateChanged(user => {
     .then(snapshot => {
       subjectSelect.innerHTML = `<option value="">Select Subject</option>`;
       snapshot.forEach(doc => {
-        (doc.data().subjects || []).forEach(sub => {
+        const data = doc.data();
+        const chip = document.getElementById("facultyChipName");
+        if (chip) chip.innerText = data.name || user.email;
+        (data.subjects || []).forEach(sub => {
           subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
         });
       });
@@ -46,29 +50,87 @@ firebase.auth().onAuthStateChanged(user => {
     );
   });
 
-  window.viewAttendance = function () {
+  window.searchAttendance = async function () {
     tableBody.innerHTML = "";
+    const table = document.getElementById("attendanceTable");
+    
+    if (!subjectSelect.value || !classSelect.value || !yearSelect.value || !date.value) {
+      alert("Please select all filters");
+      return;
+    }
 
-    db.collection("attendance")
-      .where("subject", "==", subjectSelect.value)
-      .where("classSection", "==", classSelect.value)
-      .where("yearSem", "==", yearSelect.value)
-      .where("date", "==", date.value)
-      .get()
-      .then(snapshot => {
-        snapshot.forEach(doc => {
-          const a = doc.data();
-          tableBody.innerHTML += `
-            <tr>
-              <td>${a.rollNo}</td>
-              <td>${a.name}</td>
-              <td>${a.classSection}</td>
-              <td>${a.yearSem}</td>
-              <td style="color:${a.status === "Present" ? "green" : "red"}">
-                ${a.status}
-              </td>
-            </tr>`;
-        });
+    try {
+      // Get all attendance records for the selected filters
+      const snapshot = await db.collection("attendance")
+        .where("subject", "==", subjectSelect.value)
+        .where("classSection", "==", classSelect.value)
+        .where("yearSem", "==", yearSelect.value)
+        .where("date", "==", date.value)
+        .get();
+        
+      if (snapshot.empty) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No attendance found</td></tr>';
+        table.style.display = "table";
+        return;
+      }
+      
+      // Use Map to track unique rollNo entries (to avoid duplicates)
+      const attendanceMap = new Map();
+      
+      snapshot.docs.forEach(doc => {
+        const a = doc.data();
+        const rollNo = a.rollNo;
+        
+        // If rollNo already exists, keep the one with latest timestamp
+        if (attendanceMap.has(rollNo)) {
+          const existing = attendanceMap.get(rollNo);
+          const existingTime = existing.timestamp?.seconds || 0;
+          const currentTime = a.timestamp?.seconds || 0;
+          
+          if (currentTime > existingTime) {
+            attendanceMap.set(rollNo, a);
+          }
+        } else {
+          attendanceMap.set(rollNo, a);
+        }
       });
+      
+      // Convert map to array and sort by timestamp
+      const uniqueAttendance = Array.from(attendanceMap.values()).sort((a, b) => {
+        const timeA = a.timestamp?.seconds || 0;
+        const timeB = b.timestamp?.seconds || 0;
+        return timeB - timeA; // Descending order
+      });
+      
+      uniqueAttendance.forEach(a => {
+        let markedTime = "";
+        if (a.timestamp?.seconds) {
+          markedTime = new Date(a.timestamp.seconds * 1000).toLocaleTimeString();
+        }
+        
+        tableBody.innerHTML += `
+          <tr>
+            <td>${a.date || date.value}</td>
+            <td>${a.subject}</td>
+            <td style="color:${a.status === "Present" ? "green" : "red"}">
+              ${a.status}
+            </td>
+            <td>${markedTime || "-"}</td>
+          </tr>`;
+      });
+      
+      table.style.display = "table";
+    } catch (err) {
+      console.error("Error loading attendance:", err);
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Error loading attendance</td></tr>';
+      table.style.display = "table";
+    }
   };
 });
+
+function attachSidebarToggle() {
+  const sidebar = document.querySelector(".sidebar");
+  const toggle = document.getElementById("sidebarToggle");
+  if (!sidebar || !toggle) return;
+  toggle.onclick = () => sidebar.classList.toggle("collapsed");
+}
